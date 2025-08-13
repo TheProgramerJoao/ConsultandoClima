@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Previsão do Tempo</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        /* Estilos Gerais */
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #f0f4f8;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px 0;
+            margin: 0;
+            color: #333;
+        }
+
+        /* Cartão Principal */
+        .weather-card {
+            background: #ffffff;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            width: 90%;
+            max-width: 450px;
+        }
+
+        .weather-card h1 {
+            font-size: 1.8em;
+            margin-bottom: 20px;
+            color: #1a73e8;
+        }
+
+        /* Container de Busca */
+        .search-container {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        #city-input {
+            flex-grow: 1;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            font-size: 1em;
+        }
+
+        #search-btn {
+            padding: 12px 20px;
+            background-color: #1a73e8;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: background-color 0.3s;
+        }
+
+        #search-btn:hover {
+            background-color: #155ab6;
+        }
+
+        /* Resultados do Tempo */
+        #weather-result h2 {
+            font-size: 1.5em;
+            margin-bottom: 5px;
+        }
+
+        .local-time {
+            font-size: 0.9em;
+            color: #666;
+            margin-top: 0;
+            margin-bottom: 15px;
+        }
+
+        .weather-main {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            margin: 15px 0;
+        }
+
+        #weather-icon {
+            width: 80px;
+            height: 80px;
+        }
+
+        #temperature {
+            font-size: 3.5em;
+            font-weight: 700;
+        }
+
+        #condition {
+            font-size: 1.2em;
+            text-transform: capitalize;
+            margin-bottom: 25px;
+        }
+
+        .weather-details {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            background-color: #f9f9f9;
+            padding: 20px;
+            border-radius: 10px;
+        }
+
+        .detail-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .detail-item span {
+            font-size: 0.85em;
+            color: #555;
+        }
+
+        .detail-item strong {
+            font-size: 1.1em;
+            font-weight: 700;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        #error-message {
+            background-color: #ffebee;
+            color: #c62828;
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 4px solid #c62828;
+        }
+    </style>
+</head>
+<body>
+    <div class="weather-card">
+        <h1>🌤️ Previsão do Tempo</h1>
+        <div class="search-container">
+            <input type="text" id="city-input" placeholder="Digite o nome da cidade...">
+            <button id="search-btn">Buscar</button>
+        </div>
+
+        <div id="weather-result" class="hidden">
+            <h2 id="city-name"></h2>
+            <p id="local-time" class="local-time"></p>
+
+            <div class="weather-main">
+                <img id="weather-icon" src="" alt="Ícone do tempo">
+                <p id="temperature"></p>
+            </div>
+            <p id="condition"></p>
+
+            <div class="weather-details">
+                <div class="detail-item">
+                    <span>Sensação</span>
+                    <strong id="feels-like"></strong>
+                </div>
+                <div class="detail-item">
+                    <span>Umidade</span>
+                    <strong id="humidity"></strong>
+                </div>
+                <div class="detail-item">
+                    <span>Vento</span>
+                    <strong id="wind-speed"></strong>
+                </div>
+                <div class="detail-item">
+                    <span>Pressão</span>
+                    <strong id="pressure"></strong>
+                </div>
+                <div class="detail-item">
+                    <span>Visibilidade</span>
+                    <strong id="visibility"></strong>
+                </div>
+                <div class="detail-item">
+                    <span>Índice UV</span>
+                    <strong id="uv-index"></strong>
+                </div>
+            </div>
+        </div>
+
+        <div id="error-message" class="hidden">
+            <p>Cidade não encontrada. Tente novamente.</p>
+        </div>
+    </div>
+
+    <script>
+        const chave = 'a3020f4bf1044d9d86c125730251308';
+
+        const input = document.getElementById('city-input');
+        const btn = document.getElementById('search-btn');
+        const resultado = document.getElementById('weather-result');
+        const erro = document.getElementById('error-message');
+        const nome = document.getElementById('city-name');
+        const hora = document.getElementById('local-time');
+        const icone = document.getElementById('weather-icon');
+        const temp = document.getElementById('temperature');
+        const condicao = document.getElementById('condition');
+        const sensacao = document.getElementById('feels-like');
+        const umidade = document.getElementById('humidity');
+        const vento = document.getElementById('wind-speed');
+        const pressao = document.getElementById('pressure');
+        const visibilidade = document.getElementById('visibility');
+        const uv = document.getElementById('uv-index');
+
+        async function buscarTempo(cidade) {
+            try {
+                const url = `https://api.weatherapi.com/v1/current.json?key=${chave}&q=${cidade}&aqi=no&lang=pt`;
+                const resposta = await fetch(url);
+                
+                if (!resposta.ok) {
+                    throw new Error('Cidade não encontrada');
+                }
+                
+                const dados = await resposta.json();
+                mostrarTempo(dados);
+                
+            } catch (error) {
+                mostrarErro();
+            }
+        }
+
+        function mostrarTempo(dados) {
+            erro.classList.add('hidden');
+            
+            nome.textContent = `${dados.location.name} - ${dados.location.country}`;
+            hora.textContent = `Horário local: ${formatarHora(dados.location.localtime)}`;
+            icone.src = dados.current.condition.icon;
+            temp.textContent = `${Math.round(dados.current.temp_c)}°C`;
+            condicao.textContent = dados.current.condition.text;
+            sensacao.textContent = `${Math.round(dados.current.feelslike_c)}°C`;
+            umidade.textContent = `${dados.current.humidity}%`;
+            vento.textContent = `${dados.current.wind_kph} km/h`;
+            pressao.textContent = `${dados.current.pressure_mb} mb`;
+            visibilidade.textContent = `${dados.current.vis_km} km`;
+            uv.textContent = dados.current.uv;
+            
+            resultado.classList.remove('hidden');
+        }
+
+        function formatarHora(data) {
+            const date = new Date(data);
+            return date.toLocaleString('pt-BR', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        function mostrarErro() {
+            resultado.classList.add('hidden');
+            erro.classList.remove('hidden');
+        }
+
+        function buscar() {
+            const cidade = input.value.trim();
+            
+            if (cidade === '') {
+                alert('Digite o nome de uma cidade.');
+                return;
+            }
+            
+            buscarTempo(cidade);
+        }
+
+        btn.addEventListener('click', buscar);
+
+        input.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                buscar();
+            }
+        });
+
+        window.addEventListener('load', function() {
+            input.value = 'Arapiraca';
+            buscarTempo('Arapiraca');
+        });
+    </script>
+</body>
+</html>
